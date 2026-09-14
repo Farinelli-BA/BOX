@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farinelli Box — Carga de pedidos</title>
+<style>
+  :root {
+    --rojo: #D42027;
+    --rojo-oscuro: #A81A20;
+    --crema: #F0EADA;
+    --crema-borde: #E0D6BC;
+    --tinta: #2B2320;
+    --tinta-suave: #7A6F62;
+    --blanco: #FFFFFF;
+    --fondo-aviso: #FBF0DC;
+    --amarillo-aviso: #B8862E;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--crema);
+    color: var(--tinta);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.4;
+  }
+
+  .franja-marca {
+    height: 8px;
+    background: repeating-linear-gradient(
+      45deg,
+      var(--rojo), var(--rojo) 10px,
+      var(--crema) 10px, var(--crema) 20px
+    );
+  }
+
+  header {
+    padding: 24px 20px 18px;
+    background: var(--blanco);
+    border-bottom: 1px solid var(--crema-borde);
+    text-align: center;
+  }
+
+  header img {
+    height: 42px;
+    margin-bottom: 8px;
+  }
+
+  header p {
+    margin: 0;
+    color: var(--tinta-suave);
+    font-size: 14px;
+  }
+
+  main {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 20px 16px 120px;
+  }
+
+  section.bloque {
+    background: var(--blanco);
+    border: 1px solid var(--crema-borde);
+    border-radius: 10px;
+    padding: 18px 16px;
+    margin-bottom: 16px;
+  }
+
+  section.bloque h2 {
+    font-size: 13px;
+    letter-spacing: 0.3px;
+    color: var(--rojo);
+    margin: 0 0 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    margin-top: 14px;
+  }
+
+  label:first-of-type { margin-top: 0; }
+
+  input[type="text"],
+  input[type="tel"],
+  input[type="number"],
+  input[type="date"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid var(--crema-borde);
+    border-radius: 8px;
+    background: var(--crema);
+    color: var(--tinta);
+    font-family: inherit;
+  }
+
+  textarea { resize: vertical; min-height: 60px; }
+
+  .toggle-grupo {
+    display: flex;
+    gap: 10px;
+  }
+
+  .toggle-btn {
+    flex: 1;
+    padding: 14px;
+    border: 2px solid var(--crema-borde);
+    border-radius: 8px;
+    background: var(--crema);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--tinta-suave);
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .toggle-btn.activo[data-val="Retiro"] {
+    border-color: var(--tinta);
+    background: var(--tinta);
+    color: var(--blanco);
+  }
+
+  .toggle-btn.activo[data-val="Envío"] {
+    border-color: var(--rojo);
+    background: var(--rojo);
+    color: var(--blanco);
+  }
+
+  .oculto { display: none !important; }
+
+  .producto-card {
+    border: 1px solid var(--crema-borde);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: var(--crema);
+  }
+
+  .producto-card-top {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .producto-card-top select { flex: 1; }
+
+  .btn-quitar {
+    height: 46px;
+    width: 40px;
+    flex-shrink: 0;
+    border: 1px solid var(--crema-borde);
+    background: var(--blanco);
+    border-radius: 8px;
+    font-size: 18px;
+    color: var(--tinta-suave);
+    cursor: pointer;
+  }
+
+  .fila-doble {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .btn-agregar {
+    width: 100%;
+    padding: 12px;
+    border: 1px dashed var(--tinta-suave);
+    background: transparent;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--tinta-suave);
+    cursor: pointer;
+    margin-top: 4px;
+  }
+
+  .aviso {
+    background: var(--fondo-aviso);
+    border: 1px solid var(--amarillo-aviso);
+    color: #6B4E12;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-top: 14px;
+  }
+
+  footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--blanco);
+    border-top: 1px solid var(--crema-borde);
+    padding: 14px 16px;
+  }
+
+  footer .contenido {
+    max-width: 560px;
+    margin: 0 auto;
+  }
+
+  #total-preview {
+    text-align: right;
+    font-size: 13px;
+    color: var(--tinta-suave);
+    margin-bottom: 4px;
+  }
+
+  #total-preview .linea-descuento {
+    color: var(--rojo);
+  }
+
+  #total-preview strong {
+    font-size: 18px;
+    color: var(--tinta);
+  }
+
+  #btn-guardar {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 8px;
+    background: var(--rojo);
+    color: var(--blanco);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+
+  #btn-guardar:disabled {
+    background: var(--crema-borde);
+    color: var(--tinta-suave);
+  }
+
+  #btn-guardar:active:not(:disabled) { background: var(--rojo-oscuro); }
+
+  #mensaje-estado {
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+
+  #mensaje-estado.ok { background: #E9F1E9; color: #3F5E4E; }
+  #mensaje-estado.error { background: #FBE4E1; color: var(--rojo-oscuro); }
+</style>
+</head>
+<body>
+
+<div class="franja-marca"></div>
+
+<header>
+  <img src="assets/farinelli-logo.png" alt="Farinelli">
+  <p>Carga de pedidos — Farinelli Box</p>
+</header>
+
+<main>
+
+  <div id="mensaje-estado" class="oculto"></div>
+
+  <form id="form-pedido">
+
+    <section class="bloque">
+      <h2>Cliente</h2>
+      <label for="nombre_cliente">Nombre y apellido</label>
+      <input type="text" id="nombre_cliente" required>
+
+      <label for="whatsapp_cliente">WhatsApp</label>
+      <input type="tel" id="whatsapp_cliente" placeholder="11 xxxx xxxx" required>
+    </section>
+
+    <section class="bloque">
+      <h2>Productos</h2>
+      <div id="productos-container"></div>
+      <button type="button" class="btn-agregar" id="btn-agregar-producto">+ Agregar otro producto</button>
+    </section>
+
+    <section class="bloque">
+      <h2>Modalidad</h2>
+      <div class="toggle-grupo" id="toggle-modalidad">
+        <button type="button" class="toggle-btn" data-val="Retiro">🏠 Retiro (10% off)</button>
+        <button type="button" class="toggle-btn" data-val="Envío">🚗 Envío</button>
+      </div>
+
+      <div id="bloque-envio" class="oculto">
+        <label for="direccion">Dirección de entrega</label>
+        <input type="text" id="direccion">
+
+        <label for="costo_envio">Costo de envío</label>
+        <input type="number" id="costo_envio" min="0" step="100" placeholder="$">
+      </div>
+    </section>
+
+    <section class="bloque">
+      <h2>Entrega</h2>
+      <label for="fecha_entrega">Fecha de entrega</label>
+      <input type="date" id="fecha_entrega" required>
+
+      <label for="hora_entrega">Hora de entrega</label>
+      <select id="hora_entrega" required></select>
+
+      <div id="aviso-anticipacion" class="aviso oculto"></div>
+    </section>
+
+    <section class="bloque">
+      <h2>Pago</h2>
+      <label for="medio_pago">Medio de pago</label>
+      <select id="medio_pago" required></select>
+
+      <label for="estado_pago">Estado de pago</label>
+      <select id="estado_pago" required>
+        <option value="Pendiente">Pendiente (paga en el local)</option>
+        <option value="Pagado">Pagado</option>
+      </select>
+    </section>
+
+    <section class="bloque">
+      <h2>Detalles adicionales</h2>
+      <label for="quien_carga">Quién carga el pedido</label>
+      <input type="text" id="quien_carga" placeholder="Nombre de quien lo está cargando">
+
+      <label for="notas">Notas / pedido especial</label>
+      <textarea id="notas" placeholder="Ej: sin nueces, tocar timbre, etc."></textarea>
+    </section>
+
+  </form>
+
+</main>
+
+<footer>
+  <div class="contenido">
+    <div id="total-preview">
+      <div id="linea-subtotal" class="oculto">Subtotal: <span id="subtotal-valor">$0</span></div>
+      <div id="linea-descuento" class="linea-descuento oculto">Descuento retiro (10%): <span id="descuento-valor">-$0</span></div>
+      Total: <strong id="total-valor">$0</strong>
+    </div>
+    <button type="submit" form="form-pedido" id="btn-guardar">Guardar pedido</button>
+  </div>
+</footer>
+
+<script>
+  // ====== CONFIGURACIÓN ======
+  const APPS_SCRIPT_URL = "PEGAR_ACA_LA_URL_DEL_WEB_APP"; // se completa cuando publiquemos el script
+  const HORA_INICIO = 9, HORA_FIN = 19.5, PASO_MIN = 30;
+  const ANTICIPACION_GENERAL_HS = 48;
+  const ANTICIPACION_TORTAS_HS = 24;
+  const DESCUENTO_RETIRO = 0.10;
+  const VALOR_OTRO = "__OTRO__";
+
+  let CATALOGO = [];
+  let MEDIOS_PAGO = [];
+  let modalidadActual = null;
+
+  // ====== INICIALIZACIÓN ======
+  function poblarHoras() {
+    const select = document.getElementById('hora_entrega');
+    for (let h = HORA_INICIO; h <= HORA_FIN; h += PASO_MIN / 60) {
+      const horas = Math.floor(h);
+      const minutos = Math.round((h - horas) * 60);
+      const label = `${String(horas).padStart(2,'0')}:${String(minutos).padStart(2,'0')}`;
+      const opt = document.createElement('option');
+      opt.value = label;
+      opt.textContent = label;
+      select.appendChild(opt);
+    }
+  }
+
+  function poblarMediosPago() {
+    const select = document.getElementById('medio_pago');
+    select.innerHTML = '';
+    MEDIOS_PAGO.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m;
+      select.appendChild(opt);
+    });
+  }
+
+  function crearSelectProducto() {
+    const select = document.createElement('select');
+    select.className = 'select-producto';
+    select.innerHTML = '<option value="">Elegir producto...</option>';
+
+    const categorias = {};
+    CATALOGO.forEach(p => {
+      if (!categorias[p.categoria]) categorias[p.categoria] = [];
+      categorias[p.categoria].push(p);
+    });
+
+    Object.keys(categorias).forEach(cat => {
+      const optgroup = document.createElement('optgroup');
+      optgroup.label = cat;
+      categorias[cat].forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id_producto;
+        opt.textContent = p.nombre;
+        opt.dataset.precio = p.precio;
+        opt.dataset.categoria = p.categoria;
+        optgroup.appendChild(opt);
+      });
+      select.appendChild(optgroup);
+    });
+
+    const optOtro = document.createElement('option');
+    optOtro.value = VALOR_OTRO;
+    optOtro.textContent = '✏️ Otro (no está en el catálogo)';
+    select.appendChild(optOtro);
+
+    return select;
+  }
+
+  function agregarLineaProducto() {
+    const container = document.getElementById('productos-container');
+    const card = document.createElement('div');
+    card.className = 'producto-card';
+
+    const top = document.createElement('div');
+    top.className = 'producto-card-top';
+
+    const select = crearSelectProducto();
+    select.addEventListener('change', () => {
+      const bloqueLibre = card.querySelector('.bloque-libre');
+      if (select.value === VALOR_OTRO) {
+        bloqueLibre.classList.remove('oculto');
+      } else {
+        bloqueLibre.classList.add('oculto');
+      }
+      actualizarTotal();
+      actualizarAvisoAnticipacion();
+    });
+
+    const btnQuitar = document.createElement('button');
+    btnQuitar.type = 'button';
+    btnQuitar.className = 'btn-quitar';
+    btnQuitar.textContent = '✕';
+    btnQuitar.addEventListener('click', () => {
+      card.remove();
+      actualizarTotal();
+      actualizarAvisoAnticipacion();
+    });
+
+    top.appendChild(select);
+    top.appendChild(btnQuitar);
+
+    const bloqueLibre = document.createElement('div');
+    bloqueLibre.className = 'bloque-libre oculto fila-doble';
+    bloqueLibre.style.marginTop = '8px';
+
+    const inputNombreLibre = document.createElement('input');
+    inputNombreLibre.type = 'text';
+    inputNombreLibre.className = 'input-nombre-libre';
+    inputNombreLibre.placeholder = 'Nombre del producto';
+
+    const inputPrecioLibre = document.createElement('input');
+    inputPrecioLibre.type = 'number';
+    inputPrecioLibre.className = 'input-precio-libre';
+    inputPrecioLibre.placeholder = 'Precio unitario';
+    inputPrecioLibre.min = '0';
+    inputPrecioLibre.addEventListener('input', actualizarTotal);
+
+    bloqueLibre.appendChild(inputNombreLibre);
+    bloqueLibre.appendChild(inputPrecioLibre);
+
+    const filaCantidad = document.createElement('div');
+    filaCantidad.style.marginTop = '8px';
+    const labelCantidad = document.createElement('label');
+    labelCantidad.textContent = 'Porciones';
+    labelCantidad.style.marginTop = '0';
+    const inputCantidad = document.createElement('input');
+    inputCantidad.type = 'number';
+    inputCantidad.min = '1';
+    inputCantidad.value = '1';
+    inputCantidad.className = 'input-porciones';
+    inputCantidad.addEventListener('input', actualizarTotal);
+    filaCantidad.appendChild(labelCantidad);
+    filaCantidad.appendChild(inputCantidad);
+
+    card.appendChild(top);
+    card.appendChild(bloqueLibre);
+    card.appendChild(filaCantidad);
+    container.appendChild(card);
+  }
+
+  // ====== MODALIDAD (toggle) ======
+  document.querySelectorAll('.toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      modalidadActual = btn.dataset.val;
+      document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('activo'));
+      btn.classList.add('activo');
+      const bloqueEnvio = document.getElementById('bloque-envio');
+      if (modalidadActual === 'Envío') {
+        bloqueEnvio.classList.remove('oculto');
+        document.getElementById('direccion').required = true;
+      } else {
+        bloqueEnvio.classList.add('oculto');
+        document.getElementById('direccion').required = false;
+      }
+      actualizarTotal();
+    });
+  });
+
+  // ====== TOTAL EN VIVO (con descuento de retiro) ======
+  function actualizarTotal() {
+    let subtotal = 0;
+    document.querySelectorAll('.producto-card').forEach(card => {
+      const select = card.querySelector('.select-producto');
+      const cantidad = Number(card.querySelector('.input-porciones').value || 0);
+      let precio = 0;
+      if (select.value === VALOR_OTRO) {
+        precio = Number(card.querySelector('.input-precio-libre').value || 0);
+      } else {
+        const opt = select.options[select.selectedIndex];
+        precio = opt ? Number(opt.dataset.precio || 0) : 0;
+      }
+      subtotal += precio * cantidad;
+    });
+
+    let descuento = 0;
+    if (modalidadActual === 'Retiro') {
+      descuento = subtotal * DESCUENTO_RETIRO;
+    }
+    const costoEnvio = modalidadActual === 'Envío' ? Number(document.getElementById('costo_envio').value || 0) : 0;
+    const total = subtotal - descuento + costoEnvio;
+
+    document.getElementById('linea-subtotal').classList.toggle('oculto', descuento === 0);
+    document.getElementById('linea-descuento').classList.toggle('oculto', descuento === 0);
+    document.getElementById('subtotal-valor').textContent = '$' + subtotal.toLocaleString('es-AR');
+    document.getElementById('descuento-valor').textContent = '-$' + descuento.toLocaleString('es-AR');
+    document.getElementById('total-valor').textContent = '$' + total.toLocaleString('es-AR');
+  }
+  document.getElementById('costo_envio').addEventListener('input', actualizarTotal);
+
+  // ====== AVISO DE ANTICIPACIÓN (no bloqueante) ======
+  function soloTortas() {
+    const cards = [...document.querySelectorAll('.producto-card')];
+    if (cards.length === 0) return false;
+    return cards.every(card => {
+      const select = card.querySelector('.select-producto');
+      const opt = select.options[select.selectedIndex];
+      return opt && opt.dataset.categoria === 'Tortas';
+    });
+  }
+
+  function actualizarAvisoAnticipacion() {
+    const fecha = document.getElementById('fecha_entrega').value;
+    const hora = document.getElementById('hora_entrega').value;
+    const aviso = document.getElementById('aviso-anticipacion');
+    if (!fecha || !hora) { aviso.classList.add('oculto'); return; }
+
+    const entrega = new Date(`${fecha}T${hora}:00`);
+    const horasDiferencia = (entrega - new Date()) / (1000 * 60 * 60);
+    const minimoRequerido = soloTortas() ? ANTICIPACION_TORTAS_HS : ANTICIPACION_GENERAL_HS;
+
+    if (horasDiferencia < minimoRequerido) {
+      aviso.textContent = `⚠️ Este pedido tiene menos de ${minimoRequerido}hs de anticipación. Se puede guardar igual, pero avisá al equipo.`;
+      aviso.classList.remove('oculto');
+    } else {
+      aviso.classList.add('oculto');
+    }
+  }
+  document.getElementById('fecha_entrega').addEventListener('change', actualizarAvisoAnticipacion);
+  document.getElementById('hora_entrega').addEventListener('change', actualizarAvisoAnticipacion);
+
+  // ====== CARGAR CATÁLOGO DESDE APPS SCRIPT ======
+  async function cargarCatalogo() {
+    try {
+      const resp = await fetch(APPS_SCRIPT_URL);
+      const data = await resp.json();
+      CATALOGO = data.productos;
+      MEDIOS_PAGO = data.medios_pago;
+      poblarMediosPago();
+      agregarLineaProducto();
+    } catch (err) {
+      mostrarMensaje('No se pudo cargar el catálogo. Revisá la conexión.', 'error');
+    }
+  }
+
+  // ====== ENVÍO DEL FORMULARIO ======
+  document.getElementById('btn-agregar-producto').addEventListener('click', agregarLineaProducto);
+
+  document.getElementById('form-pedido').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    if (!modalidadActual) {
+      mostrarMensaje('Elegí Retiro o Envío.', 'error');
+      return;
+    }
+
+    const items = [...document.querySelectorAll('.producto-card')]
+      .map(card => {
+        const select = card.querySelector('.select-producto');
+        const cantidad = Number(card.querySelector('.input-porciones').value || 0);
+        if (select.value === VALOR_OTRO) {
+          return {
+            id_producto: null,
+            nombre_libre: card.querySelector('.input-nombre-libre').value,
+            precio_libre: Number(card.querySelector('.input-precio-libre').value || 0),
+            porciones: cantidad
+          };
+        }
+        return { id_producto: select.value, porciones: cantidad };
+      })
+      .filter(item => (item.id_producto || item.nombre_libre) && item.porciones > 0);
+
+    if (items.length === 0) {
+      mostrarMensaje('Agregá al menos un producto.', 'error');
+      return;
+    }
+
+    const payload = {
+      nombre_cliente: document.getElementById('nombre_cliente').value,
+      whatsapp_cliente: document.getElementById('whatsapp_cliente').value,
+      items,
+      modalidad: modalidadActual,
+      direccion: document.getElementById('direccion').value,
+      costo_envio: document.getElementById('costo_envio').value,
+      fecha_entrega: document.getElementById('fecha_entrega').value,
+      hora_entrega: document.getElementById('hora_entrega').value,
+      medio_pago: document.getElementById('medio_pago').value,
+      estado_pago: document.getElementById('estado_pago').value,
+      quien_carga: document.getElementById('quien_carga').value,
+      notas: document.getElementById('notas').value
+    };
+
+    const btn = document.getElementById('btn-guardar');
+    btn.disabled = true;
+    btn.textContent = 'Guardando...';
+
+    try {
+      // Se manda como text/plain para evitar el preflight de CORS de Apps Script.
+      const resp = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      const data = await resp.json();
+      if (data.ok) {
+        mostrarMensaje(`Pedido guardado ✔️ (${data.id_pedido}) — Total: $${data.total.toLocaleString('es-AR')}`, 'ok');
+        document.getElementById('form-pedido').reset();
+        document.getElementById('productos-container').innerHTML = '';
+        agregarLineaProducto();
+        modalidadActual = null;
+        document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('activo'));
+        document.getElementById('bloque-envio').classList.add('oculto');
+        document.getElementById('aviso-anticipacion').classList.add('oculto');
+        actualizarTotal();
+      } else {
+        mostrarMensaje('Hubo un problema al guardar. Probá de nuevo.', 'error');
+      }
+    } catch (err) {
+      mostrarMensaje('No se pudo conectar. Revisá tu conexión e intentá de nuevo.', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Guardar pedido';
+    }
+  });
+
+  function mostrarMensaje(texto, tipo) {
+    const el = document.getElementById('mensaje-estado');
+    el.textContent = texto;
+    el.className = tipo;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ====== ARRANQUE ======
+  poblarHoras();
+  cargarCatalogo();
+</script>
+
+</body>
+</html>
