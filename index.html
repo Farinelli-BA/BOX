@@ -149,6 +149,24 @@
     padding: 12px 18px; border: none; border-radius: 8px; background: var(--tinta); color: var(--blanco);
     font-weight: 700; cursor: pointer;
   }
+
+  /* Modal de confirmación */
+  #modal-overlay {
+    position: fixed; inset: 0; background: rgba(43,35,32,0.55);
+    display: flex; align-items: flex-end; justify-content: center; z-index: 100;
+  }
+  #modal-caja {
+    background: var(--blanco); border-radius: 14px 14px 0 0; padding: 20px 18px 18px;
+    width: 100%; max-width: 560px; max-height: 85vh; overflow-y: auto;
+  }
+  #modal-caja h2 { font-size: 15px; color: var(--rojo); text-transform: uppercase; margin: 0 0 12px; }
+  #modal-resumen p { margin: 0 0 8px; font-size: 14px; line-height: 1.5; }
+  #modal-resumen .producto-linea-resumen { margin-left: 8px; color: var(--tinta-suave); }
+  #modal-resumen .total-resumen { font-size: 17px; font-weight: 700; margin-top: 10px; border-top: 1px solid var(--crema-borde); padding-top: 10px; }
+  #modal-botones { display: flex; gap: 10px; margin-top: 16px; }
+  #modal-botones button { flex: 1; padding: 14px; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; }
+  #btn-modal-volver { background: var(--crema); border: 1px solid var(--crema-borde); color: var(--tinta); }
+  #btn-modal-confirmar { background: var(--rojo); border: none; color: var(--blanco); }
 </style>
 </head>
 <body>
@@ -269,6 +287,17 @@
     <button type="submit" form="form-pedido" id="btn-guardar">Guardar pedido</button>
   </div>
 </footer>
+
+<div id="modal-overlay" class="oculto">
+  <div id="modal-caja">
+    <h2>Confirmá el pedido</h2>
+    <div id="modal-resumen"></div>
+    <div id="modal-botones">
+      <button type="button" id="btn-modal-volver">Volver a revisar</button>
+      <button type="button" id="btn-modal-confirmar">Confirmar y guardar</button>
+    </div>
+  </div>
+</div>
 
 <script>
   // ====== CONFIGURACIÓN ======
@@ -417,13 +446,13 @@
 
     // Precarga (modo editar)
     if (preset) {
-      const opcionCatalogo = [...select.options].find(o => o.textContent === preset.nombre && o.value !== VALOR_OTRO);
+      const opcionCatalogo = [...select.options].find(o => o.textContent === preset.producto && o.value !== VALOR_OTRO);
       if (opcionCatalogo) {
         select.value = opcionCatalogo.value;
       } else {
         select.value = VALOR_OTRO;
         bloqueLibre.classList.remove('oculto');
-        inputNombreLibre.value = preset.nombre;
+        inputNombreLibre.value = preset.producto;
         inputPrecioLibre.value = preset.precio_unitario;
       }
       inputCantidad.value = preset.porciones;
@@ -589,7 +618,7 @@
   // ====== CANCELAR PEDIDO (modo editar) ======
   document.getElementById('btn-cancelar-pedido').addEventListener('click', async () => {
     if (!idPedidoActual) return;
-    if (!confirm(`¿Seguro que querés cancelar el pedido ${idPedidoActual}? No se puede deshacer.`)) return;
+    if (!confirm(`¿Seguro que querés cancelar el pedido ${idPedidoActual} de ${document.getElementById('nombre_cliente').value}? No se puede deshacer.`)) return;
     try {
       const resp = await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
@@ -653,6 +682,42 @@
       payload.id_pedido = idPedidoActual;
     }
 
+    mostrarResumenConfirmacion(payload);
+  });
+
+  // ====== MODAL DE CONFIRMACIÓN ======
+  let payloadPendiente = null;
+
+  function mostrarResumenConfirmacion(payload) {
+    payloadPendiente = payload;
+    const cont = document.getElementById('modal-resumen');
+    let html = '';
+    html += `<p><strong>${payload.nombre_cliente}</strong> — ${payload.whatsapp_cliente}</p>`;
+    payload.items.forEach(item => {
+      const nombre = item.id_producto
+        ? [...document.querySelectorAll('.select-producto')].map(s => s.options[s.selectedIndex]).find(o => o && o.value === item.id_producto)?.textContent
+        : item.nombre_libre;
+      html += `<p class="producto-linea-resumen">${item.porciones} porciones de ${nombre || '(producto)'}</p>`;
+    });
+    html += `<p>${payload.modalidad === 'Envío' ? '🚗 Envío — ' + payload.direccion : '🏠 Retira en el local'}</p>`;
+    html += `<p>💳 ${payload.medio_pago} — ${payload.estado_pago}</p>`;
+    html += `<p>📅 ${payload.fecha_entrega} a las ${payload.hora_entrega}</p>`;
+    if (payload.notas) html += `<p>📝 ${payload.notas}</p>`;
+    html += `<p class="total-resumen">Total: ${document.getElementById('total-valor').textContent}</p>`;
+    cont.innerHTML = html;
+    document.getElementById('modal-overlay').classList.remove('oculto');
+  }
+
+  document.getElementById('btn-modal-volver').addEventListener('click', () => {
+    document.getElementById('modal-overlay').classList.add('oculto');
+    payloadPendiente = null;
+  });
+
+  document.getElementById('btn-modal-confirmar').addEventListener('click', async () => {
+    if (!payloadPendiente) return;
+    const payload = payloadPendiente;
+    document.getElementById('modal-overlay').classList.add('oculto');
+
     const btn = document.getElementById('btn-guardar');
     btn.disabled = true;
     btn.textContent = modo === 'editar' ? 'Guardando cambios...' : 'Guardando...';
@@ -678,6 +743,7 @@
     } finally {
       btn.disabled = false;
       btn.textContent = modo === 'editar' ? 'Guardar cambios' : 'Guardar pedido';
+      payloadPendiente = null;
     }
   });
 
