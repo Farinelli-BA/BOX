@@ -184,9 +184,10 @@
 
   <!-- ===== PANTALLA 1: elegir modo ===== -->
   <section id="pantalla-selector" class="bloque">
+    <p id="mensaje-cargando-catalogo" style="text-align:center; color: var(--tinta-suave); font-size: 14px;">Cargando catálogo…</p>
     <div class="selector-modo">
-      <button type="button" class="opcion-nuevo" id="btn-modo-nuevo">📦 Cargar pedido nuevo</button>
-      <button type="button" id="btn-modo-editar">✏️ Editar pedido existente<span>Buscar por ID de pedido (ej: Box-7)</span></button>
+      <button type="button" class="opcion-nuevo" id="btn-modo-nuevo" disabled>📦 Cargar pedido nuevo</button>
+      <button type="button" id="btn-modo-editar" disabled>✏️ Editar pedido existente<span>Buscar por ID de pedido (ej: Box-7)</span></button>
     </div>
   </section>
 
@@ -573,11 +574,21 @@
       MEDIOS_PAGO = data.medios_pago;
       poblarMediosPago();
       agregarLineaProducto();
+      document.getElementById('mensaje-cargando-catalogo').classList.add('oculto');
+      document.getElementById('btn-modo-nuevo').disabled = false;
+      document.getElementById('btn-modo-editar').disabled = false;
     } catch (err) {
       if (intento < 3) {
+        document.getElementById('mensaje-cargando-catalogo').textContent = `Cargando catálogo… (intento ${intento + 1})`;
         setTimeout(() => cargarCatalogo(intento + 1), 1500 * intento);
       } else {
-        mostrarMensaje('No se pudo cargar el catálogo después de varios intentos. Recargá la página en unos segundos.', 'error');
+        const mensaje = document.getElementById('mensaje-cargando-catalogo');
+        mensaje.innerHTML = 'No se pudo cargar el catálogo. <a href="#" id="link-reintentar" style="color: var(--rojo); font-weight: 700;">Reintentar</a>';
+        document.getElementById('link-reintentar').addEventListener('click', (ev) => {
+          ev.preventDefault();
+          mensaje.textContent = 'Cargando catálogo…';
+          cargarCatalogo(1);
+        });
       }
     }
   }
