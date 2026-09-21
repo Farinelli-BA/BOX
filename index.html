@@ -550,17 +550,35 @@
     actualizarTotal();
   }
 
-  // ====== CARGAR CATÁLOGO ======
-  async function cargarCatalogo() {
+  // ====== FETCH CON TIMEOUT (para no quedar "pending" para siempre si Google se cuelga) ======
+  async function fetchConTimeout(url, opciones = {}, timeoutMs = 8000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const resp = await fetch(APPS_SCRIPT_URL);
+      const resp = await fetch(url, { ...opciones, signal: controller.signal });
+      return resp;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  // ====== CARGAR CATÁLOGO (con reintentos por si el script tarda en "despertar" o se cuelga) ======
+  async function cargarCatalogo(intento = 1) {
+    try {
+      const resp = await fetchConTimeout(`${APPS_SCRIPT_URL}?_=${Date.now()}`);
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
       const data = await resp.json();
+      if (!data.productos) throw new Error('Respuesta sin productos');
       CATALOGO = data.productos;
       MEDIOS_PAGO = data.medios_pago;
       poblarMediosPago();
       agregarLineaProducto();
     } catch (err) {
-      mostrarMensaje('No se pudo cargar el catálogo. Revisá la conexión.', 'error');
+      if (intento < 3) {
+        setTimeout(() => cargarCatalogo(intento + 1), 1500 * intento);
+      } else {
+        mostrarMensaje('No se pudo cargar el catálogo después de varios intentos. Recargá la página en unos segundos.', 'error');
+      }
     }
   }
 
@@ -571,7 +589,7 @@
     const btn = document.getElementById('btn-buscar');
     btn.disabled = true; btn.textContent = 'Buscando...';
     try {
-      const resp = await fetch(`${APPS_SCRIPT_URL}?buscar=${encodeURIComponent(id)}`);
+      const resp = await fetchConTimeout(`${APPS_SCRIPT_URL}?buscar=${encodeURIComponent(id)}`);
       const data = await resp.json();
       if (!data.ok) {
         mostrarMensaje(data.error || 'No encontré ese pedido.', 'error');
@@ -620,7 +638,7 @@
     if (!idPedidoActual) return;
     if (!confirm(`¿Seguro que querés cancelar el pedido ${idPedidoActual} de ${document.getElementById('nombre_cliente').value}? No se puede deshacer.`)) return;
     try {
-      const resp = await fetch(APPS_SCRIPT_URL, {
+      const resp = await fetchConTimeout(APPS_SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ accion: 'cancelar', id_pedido: idPedidoActual })
@@ -723,7 +741,7 @@
     btn.textContent = modo === 'editar' ? 'Guardando cambios...' : 'Guardando...';
 
     try {
-      const resp = await fetch(APPS_SCRIPT_URL, {
+      const resp = await fetchConTimeout(APPS_SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(payload)
