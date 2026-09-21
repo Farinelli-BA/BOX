@@ -433,7 +433,7 @@
     const filaCantidad = document.createElement('div');
     filaCantidad.style.marginTop = '8px';
     const labelCantidad = document.createElement('label');
-    labelCantidad.textContent = 'Porciones'; labelCantidad.style.marginTop = '0';
+    labelCantidad.textContent = 'Unidades'; labelCantidad.style.marginTop = '0';
     const inputCantidad = document.createElement('input');
     inputCantidad.type = 'number'; inputCantidad.min = '1'; inputCantidad.value = '1'; inputCantidad.className = 'input-porciones';
     inputCantidad.addEventListener('input', actualizarTotal);
@@ -726,7 +726,8 @@
       const nombre = item.id_producto
         ? [...document.querySelectorAll('.select-producto')].map(s => s.options[s.selectedIndex]).find(o => o && o.value === item.id_producto)?.textContent
         : item.nombre_libre;
-      html += `<p class="producto-linea-resumen">${item.porciones} porciones de ${nombre || '(producto)'}</p>`;
+      const unidad = Number(item.porciones) === 1 ? 'unidad' : 'unidades';
+      html += `<p class="producto-linea-resumen">${item.porciones} ${unidad} de ${nombre || '(producto)'}</p>`;
     });
     html += `<p>${payload.modalidad === 'Envío' ? '🚗 Envío — ' + payload.direccion : '🏠 Retira en el local'}</p>`;
     html += `<p>💳 ${payload.medio_pago} — ${payload.estado_pago}</p>`;
